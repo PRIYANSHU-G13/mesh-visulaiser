@@ -82,9 +82,10 @@ function FitOnce({
   return null;
 }
 
+const REFRESH_FLAG = "viewer-refresh-confirmed";
 
 export default function ViewerPage() {
-  const nav = useNavigate();
+  const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state || {}) as Partial<NavState>;
   const { meshAUrl, meshBUrl, jsonData } = state;
@@ -107,23 +108,22 @@ export default function ViewerPage() {
   const [showAllSplinesB, setShowAllSplinesB] = useState(false);
 
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      e.returnValue = ""; 
+      e.returnValue = "";                  // shows the native prompt
+      sessionStorage.setItem(REFRESH_FLAG, "1"); // mark that user confirmed (will persist across reload)
     };
-
-    const handleUnload = () => {
-      window.location.href = "/";
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    window.addEventListener("unload", handleUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("unload", handleUnload);
-    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, []);
+
+  // 2) If this mount follows a refresh confirmation, redirect to home once
+  useEffect(() => {
+    if (sessionStorage.getItem(REFRESH_FLAG) === "1") {
+      sessionStorage.removeItem(REFRESH_FLAG);   // consume the flag
+      navigate("/", { replace: true });          // or: window.location.replace("/");
+    }
+  }, [navigate]);
 
   // Toggle one tooth (A)
   const toggleToothA = (num: number) => {
@@ -145,7 +145,7 @@ export default function ViewerPage() {
     return (
       <div style={{ padding: 24 }}>
         <Typography>Missing inputs — please upload again.</Typography>
-        <Button sx={{ mt: 2 }} variant="contained" onClick={() => nav("/")}>Go to Upload</Button>
+        <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate("/")}>Go to Upload</Button>
       </div>
     );
   }
@@ -175,7 +175,7 @@ export default function ViewerPage() {
           <Typography variant="body2" sx={{ mt: 2, color: "#666" }}>
             Jaws are separated vertically based on <code>is_lower</code> in the JSON.
           </Typography>
-          <Button variant="contained" sx={{ mt: 2 }} onClick={() => nav("/")}>Back to Upload</Button>
+          <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate("/")}>Back to Upload</Button>
 
           {mesh1JSON && (
             <Typography variant="caption" display="block" sx={{ mt: 2 }}>

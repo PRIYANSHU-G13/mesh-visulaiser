@@ -66,9 +66,9 @@ export default function Annotations({
                   dashed={false}
                   color={color}
                   renderOrder={1}
-                  depthTest={false}
+                  depthTest={true}
                   depthWrite={false}
-                  transparent
+                  transparent={false}
                 />
               )}
             </group>
