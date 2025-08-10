@@ -17,7 +17,17 @@ type Props = {
 
 export default function STLObject({ url, color, visible = true, onClick, onTransformReady, controlsRef }: Props) {
   const geometry = useLoader(STLLoader, url);
-  const material = useMemo(() => new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide }), [color]);
+  const material = useMemo(
+  () => new THREE.MeshStandardMaterial({
+    color,
+    transparent: false,
+    opacity: 1,
+    depthTest: true,
+    depthWrite: true,
+    side: THREE.DoubleSide, 
+  }),
+  [color]
+);
   const { camera, size } = useThree(); // controls comes from OrbitControls if you pass makeDefault
   const didFit = useRef<string | null>(null);
 
@@ -72,5 +82,5 @@ export default function STLObject({ url, color, visible = true, onClick, onTrans
   }, [geometry,url, camera, size, controlsRef]);
 
   if (!visible) return null;
-  return <mesh geometry={geometry} material={material} onClick={onClick} castShadow receiveShadow />;
+  return <mesh renderOrder={1} geometry={geometry} material={material} onClick={onClick} castShadow receiveShadow />;
 }
