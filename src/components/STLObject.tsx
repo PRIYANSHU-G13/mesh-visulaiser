@@ -45,9 +45,7 @@ export default function STLObject({ url, color, visible = true, onClick, onTrans
     box.getSize(sizeVec);
     box.getCenter(center);
 
-    // We assume a PerspectiveCamera (default in R3F)
     if (camera instanceof THREE.PerspectiveCamera) {
-      // Make sure aspect is up-to-date
       camera.aspect = size.width / size.height;
 
       const maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
@@ -73,7 +71,6 @@ export default function STLObject({ url, color, visible = true, onClick, onTrans
         camera.lookAt(center);
       }
     } else {
-      // If someone switched to orthographic, just center/zoom approximately
       camera.position.set(center.x + 1, center.y + 1, center.z + 1);
       camera.lookAt(center);
     }

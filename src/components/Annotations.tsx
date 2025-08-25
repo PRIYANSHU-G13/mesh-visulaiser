@@ -6,69 +6,66 @@ import { MeshJSON, ToothCenter } from "../types";
 type Props = {
   data: MeshJSON | null;
   visible?: boolean;
-  options?: {
-    showOnlyBad?: boolean;
-    showLabels?: boolean;
-    showSplines?: boolean;
-    lift?: number; 
-  };
-  activeToothNums?: number[] | null;
+  options?: { showOnlyBad?: boolean; showLabels?: boolean; showSplines?: boolean; lift?: number };
+  activeToothIds?: string[];                 // <<<<< use IDs
   showAllSplines?: boolean;
-  onToggleTooth?: (num: number) => void;
+  onToggleToothId?: (id: string) => void;    // <<<<< optional
+  hoveredToothId?: string | null;            // optional if you later add hover by ID
 };
 
 export default function Annotations({
   data,
   visible,
-  options = { showOnlyBad: false,  showSplines: true },
-  activeToothNums = [],
+  options = { showOnlyBad: false, showLabels: true, showSplines: true },
+  activeToothIds = [],
   showAllSplines = false,
-  onToggleTooth,
+  onToggleToothId,
 }: Props) {
   if (!visible || !data?.centers) return null;
 
-  const { showOnlyBad = false, showSplines = true } = options;
-  const items = Object.values(data.centers) as ToothCenter[];
-
+  const { showOnlyBad = false, showLabels = true, showSplines = true } = options;
   const mapPoint = (p: [number, number, number]) => p;
 
+  const entries = Object.entries(data.centers) as Array<[string, ToothCenter]>;
 
   return (
     <>
-      {items
-        .filter((c) => (showOnlyBad ? c.prep === 1 : true))
-        .map((c, i) => {
+      {entries
+        .filter(([, c]) => (showOnlyBad ? c.prep === 1 : true))
+        .map(([id, c]) => {
           const p = mapPoint(c.center);
-          const color = c.prep === 1 ? "crimson" : "#009c08";
           const isBad = c.prep === 1;
-          const isActive = activeToothNums?.includes(c.num);
+          const color = isBad ? "crimson" : "#009c08";
+          const isActive = activeToothIds.includes(id); // <<<<<
 
           return (
-            <group key={i}>
-              {/* Center marker */}
-              <mesh position={p}
+            <group key={id}>
+              <mesh
+                position={p}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (isBad && onToggleTooth) onToggleTooth(c.num); // toggle only bad teeth
+                  if (isBad && onToggleToothId) onToggleToothId(id); // <<<<<
                 }}
-                onPointerOver={(e) => (document.body.style.cursor = isBad ? "pointer" : "default")}
-                onPointerOut={(e) => (document.body.style.cursor = "default")}
               >
                 <sphereGeometry args={[0.6, 16, 16]} />
                 <meshStandardMaterial color={color} />
               </mesh>
 
-              {/* Spline line */}
-              {showSplines && isBad && c.spline && c.spline.length > 0 && (showAllSplines || isActive) && (
+              {showLabels && (
+                <group position={p}>
+                  {/* render your Html label here if desired */}
+                </group>
+              )}
+
+              {showSplines && isBad && c.spline?.length > 0 && (showAllSplines || isActive) && (
                 <Line
                   points={c.spline.map((pt) => mapPoint(pt))}
                   lineWidth={2}
                   dashed={false}
                   color={color}
-                  renderOrder={1}
-                  depthTest={true}
+                  renderOrder={999}
+                  depthTest
                   depthWrite={false}
-                  transparent={false}
                 />
               )}
             </group>
